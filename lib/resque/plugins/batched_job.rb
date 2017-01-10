@@ -6,6 +6,10 @@ module Resque
     redis.del batch_in_progress_key(id)
   end
 
+  def batch_in_progress_key(id)
+    "#{id}_in_progress"
+  end
+
   # This is a small wrapper around Resque.enqueue.
   # @param [Class] klass Job class.
   # @param [Object, #to_s] bid Batch identifier.
@@ -85,11 +89,7 @@ module Resque
       end
 
       def batch_assembly_in_progress?(id)
-        !!redis.get(batch_in_progress_key(id))
-      end
-
-      def batch_in_progress_key(id)
-        "#{id}_in_progress"
+        !!redis.get(::Resque.batch_in_progress_key(id))
       end
 
       # Remove a job from the batch list. (closes #6)
