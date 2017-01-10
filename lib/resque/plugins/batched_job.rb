@@ -1,5 +1,11 @@
 module Resque
 
+  def assemble_batched_jobs id
+    redis.set batch_in_progress_key(id), 1
+    yield self
+    redis.del batch_in_progress_key(id)
+  end
+
   # This is a small wrapper around Resque.enqueue.
   # @param [Class] klass Job class.
   # @param [Object, #to_s] bid Batch identifier.
@@ -43,7 +49,7 @@ module Resque
       #
       # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
       def after_perform_batch(id, *args)
-        if remove_batched_job(id, *args) == 0
+        if remove_batched_job(id, *args) == 0 && !batch_assembly_in_progress?
           
           after_batch_hooks = Resque::Plugin.after_batch_hooks(self)
           after_batch_hooks.each do |hook|
@@ -76,6 +82,14 @@ module Resque
         mutex(id) do |bid|
           redis.exists(bid)
         end
+      end
+
+      def batch_assembly_in_progress?(id)
+        !!redis.get(batch_in_progress_key(id))
+      end
+
+      def batch_in_progress_key(id)
+        "#{id}_in_progress"
       end
 
       # Remove a job from the batch list. (closes #6)
