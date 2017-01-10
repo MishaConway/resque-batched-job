@@ -39,6 +39,7 @@ module Resque
       #
       # @param [Object, #to_s] id Batch identifier. Any Object that responds to #to_s
       def after_enqueue_batch(id, *args)
+        puts "incrementing #{ Resque::batch_count_key(id)}"
         redis.incr Resque::batch_count_key(id)
       end
 
@@ -60,6 +61,7 @@ module Resque
       #
       # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
       def after_dequeue_batch(id, *args)
+        puts "decrementing #{ Resque::batch_count_key(id)}"
         redis.decr Resque::batch_count_key(id)
       end
 
