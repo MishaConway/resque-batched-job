@@ -53,7 +53,7 @@ module Resque
       #
       # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
       def after_perform_batch(id, *args)
-        if remove_batched_job(id, *args) == 0 && !batch_assembly_in_progress?
+        if remove_batched_job(id, *args) == 0 && !batch_assembly_in_progress?(id)
           
           after_batch_hooks = Resque::Plugin.after_batch_hooks(self)
           after_batch_hooks.each do |hook|
