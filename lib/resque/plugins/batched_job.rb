@@ -1,5 +1,6 @@
 module Resque
   def assemble_batched_jobs id
+    puts "assembling batch job..."
     redis.set batch_in_progress_key(id), 1
     yield
     redis.del batch_in_progress_key(id)
@@ -49,7 +50,7 @@ module Resque
       #
       # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
       def after_perform_batch(id, *args)
-        if batch_complete?(id) && !batch_assembly_in_progress?(id)
+        if batch_empty?(id) && !batch_assembly_in_progress?(id)
           after_batch_hooks = Resque::Plugin.after_batch_hooks(self)
           after_batch_hooks.each do |hook|
             send(hook, id, *args)
@@ -69,7 +70,7 @@ module Resque
       # empty or if the key does not exist.
       #
       # @param id (see Resque::Plugins::BatchedJob#batch)
-      def batch_complete?(id)
+      def batch_empty?(id)
         redis.get(Resque::batch_count_key(id)).to_i.zero?
       end
 
