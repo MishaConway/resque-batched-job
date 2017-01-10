@@ -99,7 +99,7 @@ module Resque
         mutex(id) do |bid|
           removed_count = redis.lrem(bid, 1, Resque.encode(:class => self.name, :args => args))
 
-          raise "Failed to remove batched job, id: #{id}, args: #{args.join(', ')}" if removed_count != 1
+          raise "Failed to remove batched job, id: #{id}, args: #{args.join(', ')}  remove count: #{removed_count}" if removed_count != 1
 
           redis.llen(bid)
         end
