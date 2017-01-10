@@ -50,7 +50,9 @@ module Resque
       #
       # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
       def after_perform_batch(id, *args)
-        if batch_empty?(id) && !batch_assembly_in_progress?(id)
+        puts "decrementing #{ Resque::batch_count_key(id)}"
+        count = redis.decr Resque::batch_count_key(id)
+        if count.zero? && !batch_assembly_in_progress?(id)
           after_batch_hooks = Resque::Plugin.after_batch_hooks(self)
           after_batch_hooks.each do |hook|
             send(hook, id, *args)
@@ -60,20 +62,9 @@ module Resque
 
       # After a job is removed, also remove it from the batch.
       #
-      # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
-      def after_dequeue_batch(id, *args)
-        puts "decrementing #{ Resque::batch_count_key(id)}"
-        redis.decr Resque::batch_count_key(id)
-      end
-
       # Checks the size of the batched job list and returns true if the list is
       # empty or if the key does not exist.
       #
-      # @param id (see Resque::Plugins::BatchedJob#batch)
-      def batch_empty?(id)
-        redis.get(Resque::batch_count_key(id)).to_i.zero?
-      end
-
       def batch_assembly_in_progress?(id)
         !!redis.get(::Resque.batch_in_progress_key(id))
       end
