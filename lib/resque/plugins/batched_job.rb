@@ -2,7 +2,7 @@ module Resque
 
   def assemble_batched_jobs id
     redis.set batch_in_progress_key(id), 1
-    yield self
+    yield
     redis.del batch_in_progress_key(id)
   end
 
