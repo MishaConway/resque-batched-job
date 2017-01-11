@@ -1,10 +1,11 @@
 module Resque
   def assemble_batched_jobs id
-    puts "assembling batch job..."
+    redis.del batch_count_key(id)
     redis.set batch_in_progress_key(id), 1
     yield
     redis.del batch_in_progress_key(id)
   end
+
 
   def batch_count_key(id)
     "#{id}_count"
@@ -40,7 +41,6 @@ module Resque
       #
       # @param [Object, #to_s] id Batch identifier. Any Object that responds to #to_s
       def after_enqueue_batch(id, *args)
-        puts "incrementing #{ Resque::batch_count_key(id)}"
         redis.incr Resque::batch_count_key(id)
       end
 
@@ -50,7 +50,6 @@ module Resque
       #
       # @param id (see Resque::Plugins::BatchedJob#after_enqueue_batch)
       def after_perform_batch(id, *args)
-        puts "decrementing #{ Resque::batch_count_key(id)}"
         count = redis.decr Resque::batch_count_key(id)
         if count.zero? && !batch_assembly_in_progress?(id)
           after_batch_hooks = Resque::Plugin.after_batch_hooks(self)
